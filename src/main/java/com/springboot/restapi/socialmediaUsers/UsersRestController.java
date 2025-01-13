@@ -1,6 +1,7 @@
 package com.springboot.restapi.socialmediaUsers;
 
 import com.springboot.restapi.exceptionhandling.UserNotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -32,7 +33,7 @@ public class UsersRestController {
     }
 
     @PostMapping (path = "/users")
-    public ResponseEntity<User> addUser(@RequestBody User user){
+    public ResponseEntity<User> addUser(@Valid @RequestBody User user){
         userDaoService.addUser(user);
         URI location = ServletUriComponentsBuilder.
                         fromCurrentRequest().
