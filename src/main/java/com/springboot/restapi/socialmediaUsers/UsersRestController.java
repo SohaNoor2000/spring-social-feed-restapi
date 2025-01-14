@@ -2,12 +2,19 @@ package com.springboot.restapi.socialmediaUsers;
 
 import com.springboot.restapi.exceptionhandling.UserNotFoundException;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+
+
 
 @RestController
 public class UsersRestController {
@@ -24,17 +31,21 @@ public class UsersRestController {
     }
 
     @GetMapping(path = "/users/{id}")
-    public User getOneUser(@PathVariable int id){
+    public EntityModel<User> getOneUser(@PathVariable int id){
         User user = userDaoService.getUserById(id);
+
         if(user==null){
             throw new UserNotFoundException("User not found for id: "+id);
         }
-        return user;
+        WebMvcLinkBuilder link = linkTo(methodOn(this.getClass()).getAllUsers());
+        return EntityModel.of(user).add(link.withRel("All-Users"));
     }
 
     @PostMapping (path = "/users")
     public ResponseEntity<User> addUser(@Valid @RequestBody User user){
+
         userDaoService.addUser(user);
+
         URI location = ServletUriComponentsBuilder.
                         fromCurrentRequest().
                         path("/{id}").
@@ -48,5 +59,4 @@ public class UsersRestController {
     public void deleteUser(@PathVariable int id){
        userDaoService.deleteUser(id);
     }
-
 }
