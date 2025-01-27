@@ -1,25 +1,49 @@
 package com.springboot.restapi.socialmediaUsers;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.util.List;
 
+@Entity
+public class Person {
 
-public class User {
-
+    @Id
+    @GeneratedValue
     private int id;
 
     @Size(min = 2,message = "Name should contain at-least 2 characters.")
     private String name;
 
     @Past(message = "DOB must be a past date.")
-    private LocalDate DateOfBirth;
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
 
-    public User(int id, String name, LocalDate dateOfBirth) {
+
+    @OneToMany(mappedBy = "person")
+    @JsonIgnore
+    private List<Post> post;
+
+    public List<Post> getPost() {
+        return post;
+    }
+
+    public void setPost(List<Post> post) {
+        this.post = post;
+    }
+
+
+    public Person(){
+
+    }
+
+    public Person(int id, String name, LocalDate dateOfBirth) {
         this.id = id;
         this.name = name;
-        DateOfBirth = dateOfBirth;
+        this.dateOfBirth = dateOfBirth;
     }
 
     public int getId() {
@@ -38,12 +62,12 @@ public class User {
         this.name = name;
     }
 
-    public LocalDate getDateOfBirth() {
-        return DateOfBirth;
+    public LocalDate getdateOfBirth() {
+        return dateOfBirth;
     }
 
-    public void setDateOfBirth(LocalDate dateOfBirth) {
-        DateOfBirth = dateOfBirth;
+    public void setdateOfBirth(LocalDate dateOfBirth) {
+        dateOfBirth = dateOfBirth;
     }
 
     @Override
@@ -51,7 +75,7 @@ public class User {
         return "Users{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", DateOfBirth=" + DateOfBirth +
+                ", dateOfBirth=" + dateOfBirth +
                 '}';
     }
 }

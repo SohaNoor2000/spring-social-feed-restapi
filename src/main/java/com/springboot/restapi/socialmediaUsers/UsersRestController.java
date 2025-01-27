@@ -13,38 +13,40 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-
+import java.util.Optional;
 
 
 @RestController
 public class UsersRestController {
 
-    private UserDaoService userDaoService;
+    private UserDaoRepository userDaoService;
+    private PostDaoRepository postDaoRepository;
 
-    public UsersRestController(UserDaoService userDaoService){
+    public UsersRestController(UserDaoRepository userDaoService,PostDaoRepository postDaoRepository){
         this.userDaoService=userDaoService;
+        this.postDaoRepository=postDaoRepository;
 
     }
     @GetMapping(path = "/users")
-    public List<User> getAllUsers(){
-      return userDaoService.getAllUsers();
+    public List<Person> getAllUsers(){
+      return userDaoService.findAll();
     }
 
     @GetMapping(path = "/users/{id}")
-    public EntityModel<User> getOneUser(@PathVariable int id){
-        User user = userDaoService.getUserById(id);
+    public EntityModel<Person> getOneUser(@PathVariable int id){
+        Optional<Person> user = userDaoService.findById(id);
 
-        if(user==null){
+        if(user.isEmpty()){
             throw new UserNotFoundException("User not found for id: "+id);
         }
         WebMvcLinkBuilder link = linkTo(methodOn(this.getClass()).getAllUsers());
-        return EntityModel.of(user).add(link.withRel("All-Users"));
+        return EntityModel.of(user.get()).add(link.withRel("All-Users"));
     }
 
     @PostMapping (path = "/users")
-    public ResponseEntity<User> addUser(@Valid @RequestBody User user){
+    public ResponseEntity<Person> addUser(@Valid @RequestBody Person user){
 
-        userDaoService.addUser(user);
+        userDaoService.save(user);
 
         URI location = ServletUriComponentsBuilder.
                         fromCurrentRequest().
@@ -57,6 +59,51 @@ public class UsersRestController {
 
     @DeleteMapping (path = "/users/{id}")
     public void deleteUser(@PathVariable int id){
-       userDaoService.deleteUser(id);
+       userDaoService.deleteById(id);
     }
+
+    @GetMapping(path = "/users/{id}/posts")
+    public List<Post> getAllPostsOfUser(@PathVariable int id){
+        Optional<Person> person =userDaoService.findById(id);
+
+        if(person.isEmpty()){
+            throw new UserNotFoundException("User Not Found For Id: "+ id);
+        }
+        return person.get().getPost();
+    }
+
+    @PostMapping(path = "/users/{id}/posts")
+    public ResponseEntity<Object> AddPostsOfUser(@PathVariable int id, @Valid @RequestBody Post post){
+        Optional<Person> person =userDaoService.findById(id);
+
+        if(person.isEmpty()){
+            throw new UserNotFoundException("User Not Found For Id: "+ id);
+        }
+
+        post.setPerson(person.get());
+        Post savedPost=postDaoRepository.save(post);
+
+        URI Location= ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{postId}")
+                .buildAndExpand(savedPost.getId())
+                .toUri();
+
+       return ResponseEntity.created(Location).build();
+    }
+
+    @GetMapping(path = "/users/{id}/posts/{postId}")
+    public EntityModel<Post> getOnePostOfUser(@PathVariable int id, @PathVariable int postId){
+        Optional<Person> user = userDaoService.findById(id);
+        Optional<Post> post = postDaoRepository.findById(postId);
+
+        if(user.isEmpty() || post.isEmpty()){
+            throw new UserNotFoundException("User/Post not found for id: "+id);
+        }
+
+        WebMvcLinkBuilder link = linkTo(methodOn(this.getClass()).getAllPostsOfUser(id));
+        return EntityModel.of(post.get()).add(link.withRel("All-Posts"));
+    }
+
+
 }
